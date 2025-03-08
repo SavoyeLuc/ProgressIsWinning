@@ -14,13 +14,29 @@ const Home = () => {
   useEffect(() => {
     const savedPosts = JSON.parse(localStorage.getItem('posts') || '[]');
     setPosts(savedPosts.length > 0 ? savedPosts : [
-      { id: 1, title: 'First Post', content: 'The Tyrannosaurus rex, or T-rex, was one of the most fearsome predators to ever walk the Earth. Living during the Late Cretaceous period, around 68–66 million years ago, this massive dinosaur could grow up to 40 feet long and 12 feet tall at the hips. With its powerful jaws filled with serrated teeth, it had one of the strongest bites of any land animal, capable of crushing bones with ease. Despite its short arms, which had only two fingers, the T-rex was a fast and intelligent hunter, likely preying on large herbivores and possibly scavenging when the opportunity arose. Fossil evidence suggests it had keen eyesight and an exceptional sense of smell, making it an apex predator of its time.' },
-      { id: 2, title: 'Second Post', content: 'The world’s political landscape is defined by power struggles, alliances, and conflicts. Major nations compete in trade, technology, and military influence, while regional wars and global issues like climate change fuel tensions. Democracy faces threats from rising authoritarianism and misinformation, yet diplomacy through organizations like the UN and NATO seeks to maintain stability amid shifting power dynamics.' }
+      {
+        id: 1,
+        title: 'First Post',
+        content: 'The Tyrannosaurus rex, or T-rex, was one of the most fearsome predators to ever walk the Earth...',
+        author: 'System',
+        timestamp: new Date('2024-01-01').toISOString(),
+        likeCounts: { FL: 40, L: 30, SL: 20, M: 45, SR: 25, R: 15, FR: 10 }
+      },
+      {
+        id: 2,
+        title: 'Second Post',
+        content: 'The worlds political landscape is defined by power struggles...',
+        author: 'System',
+        timestamp: new Date('2024-01-02').toISOString(),
+        likeCounts: { FL: 20, L: 35, SL: 40, M: 50, SR: 40, R: 35, FR: 20 }
+      }
     ]);
   }, []);
 
   const handlePostCreated = (newPost) => {
-    setPosts([...posts, newPost]);
+    const updatedPosts = [newPost, ...posts];
+    setPosts(updatedPosts);
+    localStorage.setItem('posts', JSON.stringify(updatedPosts));
     setIsCreateModalOpen(false);
   };
 

@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-route
 import InputField from "./components/Login/InputField";
 import Home from './pages/Home';
 import CreatePost from './components/Posts/CreatePost';
+import SignUp from './components/Login/SignUp';
 
 const LoginForm = () => {
   const navigate = useNavigate();
@@ -22,7 +23,10 @@ const LoginForm = () => {
       </form>
 
       <p className="signup-prompt">
-        Don&apos;t have an account? <a href="#" className="signup-link">Sign up</a>
+        Don&apos;t have an account? <a href="#" onClick={(e) => {
+          e.preventDefault();
+          navigate('/signup');
+        }} className="signup-link">Sign up</a>
       </p>
     </div>
   );
@@ -34,6 +38,7 @@ const App = () => {
       <Routes>
         <Route path="/" element={<LoginForm />} />
         <Route path="/login" element={<LoginForm />} />
+        <Route path="/signup" element={<SignUp />} />
         <Route path="/home" element={<Home />} />
         <Route path="/create-post" element={<CreatePost />} />
       </Routes>

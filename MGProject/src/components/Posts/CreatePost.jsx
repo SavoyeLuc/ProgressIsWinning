@@ -5,15 +5,26 @@ const CreatePost = ({ onClose, onPostCreated }) => {
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = (e) => {
         e.preventDefault();
-        try {
-            const response = await axios.post('/api/posts', { title, content });
-            onPostCreated(response.data);
-            onClose();
-        } catch (error) {
-            console.error('Error creating post:', error);
-        }
+        const newPost = {
+            id: Date.now(),
+            title,
+            content,
+            author: 'Anonymous', // This should be replaced with actual user data later
+            timestamp: new Date().toISOString(),
+            likeCounts: { FL: 0, L: 0, SL: 0, M: 0, SR: 0, R: 0, FR: 0 }
+        };
+
+        // Get existing posts from localStorage
+        const existingPosts = JSON.parse(localStorage.getItem('posts') || '[]');
+        const updatedPosts = [newPost, ...existingPosts];
+        
+        // Save to localStorage
+        localStorage.setItem('posts', JSON.stringify(updatedPosts));
+        
+        onPostCreated(newPost);
+        onClose();
     };
 
     return (
@@ -36,7 +47,7 @@ const CreatePost = ({ onClose, onPostCreated }) => {
                     />
                     <div className="button-group">
                         <button type="submit">Create Post</button>
-                        <button type="button" onClick={onClose}>Cancel</button>
+                        <button type="button" onClick={onClose} className="cancel-button">Cancel</button>
                     </div>
                 </form>
             </div>
