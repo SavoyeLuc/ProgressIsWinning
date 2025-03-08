@@ -252,3 +252,13 @@ body {
 .slider, .slider::-webkit-slider-thumb {
   display: none;
 }
+
+.material-symbols-rounded {
+  font-size: 1.25rem;
+  color: #9284c8;
+  transition: color 0.2s ease;
+}
+
+.input-field:focus ~ .material-symbols-rounded {
+  color: #5F41E4;
+}
