@@ -252,3 +252,19 @@ body {
 .slider, .slider::-webkit-slider-thumb {
   display: none;
 }
+
+/* Add this to your existing Login.css file */
+.error-message {
+  color: #e74c3c;
+  background-color: #fde8e6;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.login-button:disabled {
+  background: #b3b3b3;
+  cursor: not-allowed;
+}

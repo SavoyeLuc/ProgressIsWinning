@@ -10,7 +10,7 @@ const SignUp = () => {
     e.preventDefault();
     navigate('/home');
   };
-
+  
   return (
     <div className="login-container signup-container">
       <h2 className="form-title">Create Account</h2>
