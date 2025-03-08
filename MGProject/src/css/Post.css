@@ -1,57 +1,67 @@
 .post {
-    border: 1px solid #ccc;
-    padding: 1rem;
-    margin: 0 auto 1rem;
-    border-radius: 5px;
-    background-color: white;
-    max-width: 800px;
-    width: 90%;
-  }
-  
-  .post header {
-    margin-bottom: 1rem;
-  }
-  
-  .post-body {
-    margin-bottom: 1rem;
-    background-color: white;
-    
-  }
-  
-  .post-actions {
-    display: flex;
-    gap: 1rem;
-  }
-  
-  .post-actions button {
-    padding: 0.5rem 1rem;
-    background-color: #007bff;
-    color: white;
-    cursor: pointer;
-    border: none;
-    border-radius: 5px;
-  }
-  
-  .post-actions button:hover {
-    background-color: #0056b3;
-  }
+  border: 1px solid rgba(175, 128, 255, 0.3); /* Light purple border */
+  padding: 1rem;
+  margin: 0 auto 1rem;
+  border-radius: 8px;
+  background-color: white;
+  max-width: 800px;
+  width: 90%;
+  box-shadow: 0 4px 8px rgba(175, 128, 255, 0.2); /* Subtle glow */
+}
 
-  .like-bar-container {
-    display: flex;
-    align-items: center;
-    margin-top: 10px;
-  }
-  
-  .total-likes {
-    margin-right: 10px;
-    font-weight: bold;
-  }
-  
-  .like-bar {
-    display: flex;
-    width: 100%;
-    height: 10px;
-    border-radius: 5px;
-    overflow: hidden;
-    background-color: #eee;
-  }
+.post header {
+  margin-bottom: 1rem;
+  border-bottom: 2px solid rgba(175, 128, 255, 0.3);
+  padding-bottom: 0.5rem;
+}
+
+.post-body {
+  margin-bottom: 1rem;
+  background-color: white;
+}
+
+.post-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+/* Updated Buttons */
+.post-actions button {
+  padding: 0.5rem 1rem;
+  background: white;
+  color: #663399; /* Purple text */
+  border: 2px solid #af80ff; /* Light purple border */
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.3s, box-shadow 0.3s;
+}
+
+.post-actions button:hover {
+  background: #af80ff;
+  color: white;
+  box-shadow: 0 0 10px rgba(175, 128, 255, 0.4);
+}
+
+/* Like Bar */
+.like-bar-container {
+  display: flex;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.total-likes {
+  margin-right: 10px;
+  font-weight: bold;
+  color: #663399;
+}
+
+.like-bar {
+  display: flex;
+  width: 100%;
+  height: 10px;
+  border-radius: 5px;
+  overflow: hidden;
+  background-color: rgba(175, 128, 255, 0.1);
+  border: 1px solid rgba(175, 128, 255, 0.3);
+  box-shadow: inset 0 0 5px rgba(175, 128, 255, 0.3);
+}
