@@ -33,10 +33,10 @@ CREATE TABLE Comments (
     entityID INT NOT NULL, -- ID of the post or comment being commented on
     username VARCHAR(50) NOT NULL, -- Username of the user who created the comment
     body TEXT NOT NULL, -- Content of the comment
-    datePosted TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (username) REFERENCES Users(username) ON DELETE CASCADE, -- links the comments username to the Users table
-    CHECK (entityType = 'POST' AND entityID IN (SELECT postID FROM PostsData) OR entityType = 'COMMENT' AND entityID IN (SELECT commentID FROM Comments)), -- Ensure entityID exists in the corresponding table
+    datePosted TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Timestamp of when the comment was made
+    FOREIGN KEY (username) REFERENCES Users(username) ON DELETE CASCADE -- links the comments username to the Users table
 );
+
 
 -- Step 5: Create the Likes table
 CREATE TABLE Likes (
@@ -55,7 +55,6 @@ CREATE INDEX idx_datePosted ON PostsData(datePosted); -- Index for faster retrie
 CREATE INDEX idx_datePosted_comments ON Comments(datePosted); -- Index for faster retrieval of comments by date
 CREATE INDEX idx_likes_entity ON Likes(entityType, entityID); -- Index for faster retrieval of likes by entity type and ID
 CREATE INDEX idx_likes_user ON Likes(username); -- Index for faster retrieval of likes by user
-
 
 -- PROCEDURES:
 
@@ -100,9 +99,14 @@ CREATE PROCEDURE insertPost(
     IN p_username VARCHAR(50),
     IN p_title VARCHAR(255),
     IN p_body TEXT,
-    IN p_sources TEXT NULL
+    IN p_sources TEXT -- Removed NULL here
 )
 BEGIN
+    -- Handle NULL values explicitly by setting to NULL if empty
+    IF p_sources = '' THEN
+        SET p_sources = NULL;
+    END IF;
+
     -- Insert new post
     INSERT INTO PostsData (username, title, body, sources)
     VALUES (p_username, p_title, p_body, p_sources);
@@ -112,6 +116,7 @@ BEGIN
 END $$
 
 DELIMITER ;
+
 
 
 -- PROCEDURE: Insert a new comment
@@ -309,3 +314,41 @@ VALUES
     ('POST', @post2, 'johndoe', 'This could make voting harder for low-income citizens. Whats the alternative?'),
     ('POST', @post2, 'tomGOP', 'Election integrity is key! IDs are needed for everything else, why not voting?'),
     ('POST', @post2, 'sarahX', 'This disproportionately affects minorities and the elderly. Bad idea.');
+
+-- adding likes to posts and comments
+
+-- Insert Likes for Posts
+-- Assume @post1 and @post2 already hold the post IDs from previous inserts
+
+-- Likes for Post 1 (Green Energy Investment Act)
+INSERT INTO Likes (username, entityType, entityID, polLean)
+VALUES
+    ('janedoe', 'POST', @post1, 'L'),    -- Supports
+    ('sarahX', 'POST', @post1, 'FL'),    -- Strongly supports
+    ('tomGOP', 'POST', @post1, 'FR'),    -- Opposes but engaged
+    ('mark123', 'POST', @post1, 'R');    -- Skeptical but engaged
+
+-- Likes for Post 2 (National Voter ID Requirement)
+INSERT INTO Likes (username, entityType, entityID, polLean)
+VALUES
+    ('mark123', 'POST', @post2, 'R'),    -- Supports
+    ('tomGOP', 'POST', @post2, 'FR'),    -- Strongly supports
+    ('johndoe', 'POST', @post2, 'M'),    -- Critiques but engaged
+    ('janedoe', 'POST', @post2, 'L');    -- Disagrees but engaged
+
+-- Retrieve comment IDs (Assuming AUTO_INCREMENT)
+SET @comment1 = (SELECT commentID FROM Comments WHERE entityType = 'POST' AND entityID = @post1 AND username = 'janedoe');
+SET @comment2 = (SELECT commentID FROM Comments WHERE entityType = 'POST' AND entityID = @post1 AND username = 'tomGOP');
+SET @comment3 = (SELECT commentID FROM Comments WHERE entityType = 'POST' AND entityID = @post1 AND username = 'sarahX');
+
+SET @comment4 = (SELECT commentID FROM Comments WHERE entityType = 'POST' AND entityID = @post2 AND username = 'johndoe');
+SET @comment5 = (SELECT commentID FROM Comments WHERE entityType = 'POST' AND entityID = @post2 AND username = 'tomGOP');
+SET @comment6 = (SELECT commentID FROM Comments WHERE entityType = 'POST' AND entityID = @post2 AND username = 'sarahX');
+
+-- Likes for Comments (Some get likes, others don't)
+INSERT INTO Likes (username, entityType, entityID, polLean)
+VALUES
+    ('johndoe', 'COMMENT', @comment1, 'M'),   -- Likes Janedoe’s comment on Post 1
+    ('sarahX', 'COMMENT', @comment1, 'FL'),   -- Strongly agrees with Janedoe
+    ('janedoe', 'COMMENT', @comment5, 'L'),   -- Likes TomGOP’s comment on Post 2
+    ('mark123', 'COMMENT', @comment6, 'R');   -- Likes SarahX’s critique on Post 2
