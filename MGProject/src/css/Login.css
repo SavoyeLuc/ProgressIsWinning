@@ -192,3 +192,63 @@ body {
 .login-container a:hover {
   text-decoration: underline;
 }
+
+/* Sign up specific styles */
+.signup-container {
+  max-width: 450px;
+}
+
+.political-spectrum {
+  margin: 1.5rem 0;
+}
+
+.political-spectrum label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #6652BE;
+  font-weight: 500;
+}
+
+.dot-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 10px;
+  margin: 15px 0;
+}
+
+.dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.2s ease;
+}
+
+.dot:nth-child(1) { background: #000080; }
+.dot:nth-child(2) { background: #1a1a8f; }
+.dot:nth-child(3) { background: #33339e; }
+.dot:nth-child(4) { background: #4c4cad; }
+.dot:nth-child(5) { background: #921a1a; }
+.dot:nth-child(6) { background: #ad1313; }
+.dot:nth-child(7) { background: #ea0707; }
+
+.dot.selected {
+  transform: scale(1.3);
+  box-shadow: 0 0 0 2px white, 0 0 0 4px #6652BE;
+}
+
+.spectrum-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.5rem;
+  color: #6652BE;
+  font-size: 0.9rem;
+}
+
+/* Remove the old slider styles */
+.slider, .slider::-webkit-slider-thumb {
+  display: none;
+}
