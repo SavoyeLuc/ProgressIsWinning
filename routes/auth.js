@@ -6,8 +6,13 @@ const pool = require('../config/db');
 const authController = require('../controllers/authController');
 const auth = require('../middleware/auth');
 
+// Register a new user
+router.post('/register', authController.register);
 
-router.post('/register', auth, authController.register);
-router.post('/login', auth, authController.login);
+// Login user
+router.post('/login', authController.login);
+
+// Get current user profile
+router.get('/profile', auth, authController.getProfile);
 
 module.exports = router;

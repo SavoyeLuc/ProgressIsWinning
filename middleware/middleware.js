@@ -19,7 +19,7 @@ const auth = (req, res, next) => {
         
         // Add user info to request
         req.user = {
-            username: decoded.username
+            id: decoded.userId
         };
         
         next();

@@ -57,7 +57,56 @@ exports.getPosts = async (req, res) => {
         const sortBy = req.query.sortBy || 'recent'; // Default sort by recency
         const offset = (page - 1) * limit;
 
-        // First, get the posts with basic information
+        let orderClause = '';
+        
+        // Determine the sorting method
+        switch (sortBy) {
+            case 'balanced':
+                // Sort by how balanced the post is (closest to zero difference between right and left leaning likes)
+                orderClause = `
+                    ABS(
+                        (SELECT COUNT(*) FROM Likes WHERE entityType = 'POST' AND entityID = p.postID AND polLean IN ('FR', 'R', 'SR')) - 
+                        (SELECT COUNT(*) FROM Likes WHERE entityType = 'POST' AND entityID = p.postID AND polLean IN ('FL', 'L', 'SL'))
+                    ) ASC, 
+                    p.datePosted DESC
+                `;
+                break;
+            case 'controversial':
+                // Sort by total likes (most engagement)
+                orderClause = `
+                    (SELECT COUNT(*) FROM Likes WHERE entityType = 'POST' AND entityID = p.postID) DESC, 
+                    p.datePosted DESC
+                `;
+                break;
+            case 'right':
+                // Sort by right-leaning likes
+                orderClause = `
+                    (SELECT COUNT(*) FROM Likes WHERE entityType = 'POST' AND entityID = p.postID AND polLean IN ('FR', 'R', 'SR')) DESC, 
+                    p.datePosted DESC
+                `;
+                break;
+            case 'left':
+                // Sort by left-leaning likes
+                orderClause = `
+                    (SELECT COUNT(*) FROM Likes WHERE entityType = 'POST' AND entityID = p.postID AND polLean IN ('FL', 'L', 'SL')) DESC, 
+                    p.datePosted DESC
+                `;
+                break;
+            case 'moderate':
+                // Sort by moderate likes
+                orderClause = `
+                    (SELECT COUNT(*) FROM Likes WHERE entityType = 'POST' AND entityID = p.postID AND polLean = 'M') DESC, 
+                    p.datePosted DESC
+                `;
+                break;
+            case 'recent':
+            default:
+                // Sort by most recent
+                orderClause = 'p.datePosted DESC';
+                break;
+        }
+
+        // Get posts with user information
         const [posts] = await db.query(`
             SELECT 
                 p.postID, 
@@ -72,12 +121,13 @@ exports.getPosts = async (req, res) => {
                 (SELECT COUNT(*) FROM Comments WHERE postID = p.postID) AS commentCount
             FROM PostsData p
             JOIN Users u ON p.username = u.username
-            ORDER BY p.datePosted DESC
+            ORDER BY ${orderClause}
             LIMIT ? OFFSET ?
         `, [limit, offset]);
 
         // Get like counts for each post
         for (const post of posts) {
+            // Get like counts by political leaning
             const [likeCounts] = await db.query(`
                 SELECT 
                     polLean,
@@ -103,34 +153,6 @@ exports.getPosts = async (req, res) => {
             post.leftLikes = post.likes['FL'] + post.likes['L'] + post.likes['SL'];
             post.moderateLikes = post.likes['M'];
             post.polarizationScore = Math.abs(post.rightLikes - post.leftLikes);
-        }
-
-        // Sort posts based on the requested criteria
-        switch (sortBy) {
-            case 'balanced':
-                // Sort by how balanced the post is (closest to zero difference between right and left leaning likes)
-                posts.sort((a, b) => a.polarizationScore - b.polarizationScore);
-                break;
-            case 'controversial':
-                // Sort by total likes (most engagement)
-                posts.sort((a, b) => b.totalLikes - a.totalLikes);
-                break;
-            case 'right':
-                // Sort by right-leaning likes
-                posts.sort((a, b) => b.rightLikes - a.rightLikes);
-                break;
-            case 'left':
-                // Sort by left-leaning likes
-                posts.sort((a, b) => b.leftLikes - a.leftLikes);
-                break;
-            case 'moderate':
-                // Sort by moderate likes
-                posts.sort((a, b) => b.moderateLikes - a.moderateLikes);
-                break;
-            case 'recent':
-            default:
-                // Already sorted by datePosted DESC in the SQL query
-                break;
         }
 
         // Get total count of posts
@@ -262,70 +284,6 @@ exports.getPostById = async (req, res) => {
     }
 };
 
-// Get posts by a specific user
-exports.getUserPosts = async (req, res) => {
-    try {
-        const username = req.params.username;
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
-        const offset = (page - 1) * limit;
-
-        // Check if user exists
-        const [users] = await db.query('SELECT username FROM Users WHERE username = ?', [username]);
-        
-        if (users.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'User not found'
-            });
-        }
-
-        // Get posts by user
-        const [posts] = await db.query(`
-            SELECT 
-                p.postID, 
-                p.title, 
-                p.body, 
-                p.sources, 
-                p.datePosted,
-                p.likes,
-                u.username,
-                u.firstName,
-                u.lastName,
-                u.polLean
-            FROM PostsData p
-            JOIN Users u ON p.username = u.username
-            WHERE p.username = ?
-            ORDER BY p.datePosted DESC
-            LIMIT ? OFFSET ?
-        `, [username, limit, offset]);
-
-        // Get total count of user's posts
-        const [countResult] = await db.query(
-            'SELECT COUNT(*) as total FROM PostsData WHERE username = ?', 
-            [username]
-        );
-        
-        const totalPosts = countResult[0].total;
-        const totalPages = Math.ceil(totalPosts / limit);
-
-        res.json({
-            success: true,
-            currentPage: page,
-            totalPages,
-            totalPosts,
-            postsPerPage: limit,
-            posts
-        });
-    } catch (error) {
-        console.error('Get user posts error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Server error while fetching user posts'
-        });
-    }
-};
-
 // Add a comment to a post
 exports.addComment = async (req, res) => {
     try {
@@ -333,12 +291,64 @@ exports.addComment = async (req, res) => {
         const username = req.user.username;
 
         // Validate required fields
-        if (!postID || !body) {
+        if (!body) {
             return res.status(400).json({
                 success: false,
-                message: 'Post ID and comment body are required'
+                message: 'Comment body is required'
             });
         }
+
+        if (!postID && !parentCommentID) {
+            return res.status(400).json({
+                success: false,
+                message: 'Either postID or parentCommentID must be provided'
+            });
+        }
+
+        // Call the stored procedure to insert comment
+        const [result] = await db.query(
+            'CALL insertComment(?, ?, ?, ?)',
+            [postID || null, username, parentCommentID || null, body]
+        );
+
+        // Check if comment was created successfully
+        if (result[0][0].message === 'Comment Created') {
+            // Get the newly created comment ID
+            const [commentResult] = await db.query(
+                'SELECT LAST_INSERT_ID() as commentID'
+            );
+            
+            const commentID = commentResult[0].commentID;
+
+            return res.status(201).json({
+                success: true,
+                message: 'Comment added successfully',
+                commentID
+            });
+        } else {
+            return res.status(500).json({
+                success: false,
+                message: 'Failed to add comment'
+            });
+        }
+    } catch (error) {
+        console.error('Add comment error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error while adding comment'
+        });
+    }
+};
+
+// Get comments for a post (with pagination and sorting)
+exports.getComments = async (req, res) => {
+    try {
+        const postID = req.params.postID;
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
+        const sortBy = req.query.sortBy || 'recent'; // Default sort by recency
+        const parentCommentID = req.query.parentID || null; // For nested comments
+        const offset = (page - 1) * limit;
 
         // Check if post exists
         const [posts] = await db.query('SELECT postID FROM PostsData WHERE postID = ?', [postID]);
@@ -350,42 +360,125 @@ exports.addComment = async (req, res) => {
             });
         }
 
-        // If parentCommentID is provided, check if it exists
-        if (parentCommentID) {
-            const [comments] = await db.query(
-                'SELECT commentID FROM Comments WHERE commentID = ?', 
-                [parentCommentID]
-            );
-            
-            if (comments.length === 0) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'Parent comment not found'
-                });
-            }
+        let orderClause = '';
+        
+        // Determine the sorting method
+        switch (sortBy) {
+            case 'controversial':
+                // Sort by total likes (most engagement)
+                orderClause = `
+                    (SELECT COUNT(*) FROM Likes WHERE entityType = 'COMMENT' AND entityID = c.commentID) DESC, 
+                    c.datePosted DESC
+                `;
+                break;
+            case 'balanced':
+                // Sort by how balanced the comment is
+                orderClause = `
+                    ABS(
+                        (SELECT COUNT(*) FROM Likes WHERE entityType = 'COMMENT' AND entityID = c.commentID AND polLean IN ('FR', 'R', 'SR')) - 
+                        (SELECT COUNT(*) FROM Likes WHERE entityType = 'COMMENT' AND entityID = c.commentID AND polLean IN ('FL', 'L', 'SL'))
+                    ) ASC, 
+                    c.datePosted DESC
+                `;
+                break;
+            case 'oldest':
+                // Sort by oldest first
+                orderClause = 'c.datePosted ASC';
+                break;
+            case 'recent':
+            default:
+                // Sort by most recent
+                orderClause = 'c.datePosted DESC';
+                break;
         }
 
-        // Insert comment
-        const [result] = await db.query(`
-            INSERT INTO Comments (postID, username, parentCommentID, body, likes)
-            VALUES (?, ?, ?, ?, JSON_OBJECT('FR', 0, 'R', 0, 'SR', 0, 'M', 0, 'SL', 0, 'L', 0, 'FL', 0))
-        `, [postID, username, parentCommentID || null, body]);
+        // Build the query based on whether we're getting top-level or nested comments
+        let whereClause = 'c.postID = ?';
+        let queryParams = [postID];
+        
+        if (parentCommentID === null) {
+            // Get top-level comments (no parent)
+            whereClause += ' AND c.parentCommentID IS NULL';
+        } else {
+            // Get replies to a specific comment
+            whereClause += ' AND c.parentCommentID = ?';
+            queryParams.push(parentCommentID);
+        }
 
-        res.status(201).json({
+        // Get comments
+        const [comments] = await db.query(`
+            SELECT 
+                c.commentID, 
+                c.postID,
+                c.body, 
+                c.datePosted,
+                c.parentCommentID,
+                u.username,
+                u.firstName,
+                u.lastName,
+                u.polLean,
+                (SELECT COUNT(*) FROM Comments WHERE parentCommentID = c.commentID) AS replyCount
+            FROM Comments c
+            JOIN Users u ON c.username = u.username
+            WHERE ${whereClause}
+            ORDER BY ${orderClause}
+            LIMIT ? OFFSET ?
+        `, [...queryParams, limit, offset]);
+
+        // Get like counts for each comment
+        for (const comment of comments) {
+            const [likeCounts] = await db.query(`
+                SELECT 
+                    polLean,
+                    COUNT(*) as count
+                FROM Likes
+                WHERE entityType = 'COMMENT' AND entityID = ?
+                GROUP BY polLean
+            `, [comment.commentID]);
+            
+            // Initialize likes object with zeros
+            comment.likes = {
+                'FL': 0, 'L': 0, 'SL': 0, 'M': 0, 'SR': 0, 'R': 0, 'FR': 0
+            };
+            
+            // Fill in actual counts
+            likeCounts.forEach(like => {
+                comment.likes[like.polLean] = like.count;
+            });
+            
+            // Calculate total likes
+            comment.totalLikes = Object.values(comment.likes).reduce((sum, count) => sum + count, 0);
+        }
+
+        // Get total count of comments for this query
+        const [countResult] = await db.query(
+            `SELECT COUNT(*) as total FROM Comments WHERE ${whereClause}`, 
+            queryParams
+        );
+        
+        const totalComments = countResult[0].total;
+        const totalPages = Math.ceil(totalComments / limit);
+
+        res.json({
             success: true,
-            message: 'Comment added successfully',
-            commentID: result.insertId
+            currentPage: page,
+            totalPages,
+            totalComments,
+            commentsPerPage: limit,
+            sortBy,
+            parentCommentID,
+            comments
         });
     } catch (error) {
-        console.error('Add comment error:', error);
+        console.error('Get comments error:', error);
         res.status(500).json({
             success: false,
-            message: 'Server error while adding comment'
+            message: 'Server error while fetching comments'
         });
     }
 };
 
-// Like a post or comment
+// Add a like to a post or comment
 exports.addLike = async (req, res) => {
     try {
         const { entityType, entityID } = req.body;
@@ -549,135 +642,4 @@ exports.removeLike = async (req, res) => {
     }
 };
 
-// Get comments for a post (with pagination and sorting)
-exports.getComments = async (req, res) => {
-    try {
-        const postID = req.params.postID;
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 20;
-        const sortBy = req.query.sortBy || 'recent'; // Default sort by recency
-        const parentCommentID = req.query.parentID || null; // For nested comments
-        const offset = (page - 1) * limit;
-
-        // Check if post exists
-        const [posts] = await db.query('SELECT postID FROM PostsData WHERE postID = ?', [postID]);
-        
-        if (posts.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'Post not found'
-            });
-        }
-
-        let orderClause = '';
-        
-        // Determine the sorting method
-        switch (sortBy) {
-            case 'controversial':
-                // Sort by total likes (most engagement)
-                orderClause = `
-                    (
-                        JSON_EXTRACT(c.likes, '$.FR') + 
-                        JSON_EXTRACT(c.likes, '$.R') + 
-                        JSON_EXTRACT(c.likes, '$.SR') + 
-                        JSON_EXTRACT(c.likes, '$.M') + 
-                        JSON_EXTRACT(c.likes, '$.SL') + 
-                        JSON_EXTRACT(c.likes, '$.L') + 
-                        JSON_EXTRACT(c.likes, '$.FL')
-                    ) DESC, 
-                    c.datePosted DESC
-                `;
-                break;
-            case 'balanced':
-                // Sort by how balanced the comment is
-                orderClause = `
-                    ABS(
-                        (JSON_EXTRACT(c.likes, '$.FR') + JSON_EXTRACT(c.likes, '$.R') + JSON_EXTRACT(c.likes, '$.SR')) - 
-                        (JSON_EXTRACT(c.likes, '$.FL') + JSON_EXTRACT(c.likes, '$.L') + JSON_EXTRACT(c.likes, '$.SL'))
-                    ) ASC, 
-                    c.datePosted DESC
-                `;
-                break;
-            case 'oldest':
-                // Sort by oldest first
-                orderClause = 'c.datePosted ASC';
-                break;
-            case 'recent':
-            default:
-                // Sort by most recent
-                orderClause = 'c.datePosted DESC';
-                break;
-        }
-
-        // Build the query based on whether we're getting top-level or nested comments
-        let whereClause = 'c.postID = ?';
-        let queryParams = [postID];
-        
-        if (parentCommentID === null) {
-            // Get top-level comments (no parent)
-            whereClause += ' AND c.parentCommentID IS NULL';
-        } else {
-            // Get replies to a specific comment
-            whereClause += ' AND c.parentCommentID = ?';
-            queryParams.push(parentCommentID);
-        }
-
-        // Get comments
-        const [comments] = await db.query(`
-            SELECT 
-                c.commentID, 
-                c.postID,
-                c.body, 
-                c.datePosted,
-                c.likes,
-                c.parentCommentID,
-                u.username,
-                u.firstName,
-                u.lastName,
-                u.polLean,
-                (
-                    JSON_EXTRACT(c.likes, '$.FR') + 
-                    JSON_EXTRACT(c.likes, '$.R') + 
-                    JSON_EXTRACT(c.likes, '$.SR') + 
-                    JSON_EXTRACT(c.likes, '$.M') + 
-                    JSON_EXTRACT(c.likes, '$.SL') + 
-                    JSON_EXTRACT(c.likes, '$.L') + 
-                    JSON_EXTRACT(c.likes, '$.FL')
-                ) AS totalLikes,
-                (SELECT COUNT(*) FROM Comments WHERE parentCommentID = c.commentID) AS replyCount
-            FROM Comments c
-            JOIN Users u ON c.username = u.username
-            WHERE ${whereClause}
-            ORDER BY ${orderClause}
-            LIMIT ? OFFSET ?
-        `, [...queryParams, limit, offset]);
-
-        // Get total count of comments for this query
-        const [countResult] = await db.query(
-            `SELECT COUNT(*) as total FROM Comments WHERE ${whereClause}`, 
-            queryParams
-        );
-        
-        const totalComments = countResult[0].total;
-        const totalPages = Math.ceil(totalComments / limit);
-
-        res.json({
-            success: true,
-            currentPage: page,
-            totalPages,
-            totalComments,
-            commentsPerPage: limit,
-            sortBy,
-            parentCommentID,
-            comments
-        });
-    } catch (error) {
-        console.error('Get comments error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Server error while fetching comments'
-        });
-    }
-};
-
-module.exports = exports;
+module.exports = exports; 
