@@ -1,6 +1,0 @@
-database = MiddleGroundDB
-user = root 
-host = localhost
-password = qwertyuiop
-port = 3306
-

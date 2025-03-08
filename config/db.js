@@ -1,19 +1,19 @@
-const mysql = require('mysql2');
+const mysql = require('mysql2/promise');
+const dotenv = require('dotenv');
 
-
-
+dotenv.config();
 
 const pool = mysql.createPool({
-   host: process.env.MYSQL_HOST || 'localhost',
-   user: process.env.MYSQL_USER || 'root',
-   password: process.env.MYSQL_PASSWORD || '',
-   database: process.env.MYSQL_DATABASE || 'reddit_clone',
+   host: process.env.host || 'localhost',
+   user: process.env.user || 'roo',
+   password: process.env.password || '',
+   database: process.env.database || 'MiddleGroundDB',
    waitForConnections: true,
    connectionLimit: 10,
    queueLimit: 0
  });
 
- function handleDisconnect(pool) {
+function handleDisconnect(pool) {
     pool.on('error', (err) => {
         if (err.code === 'PROTOCOL_CONNECTION_LOST') {
             console.error('Database connection lost. Attempting to reconnect...');
@@ -25,9 +25,7 @@ const pool = mysql.createPool({
         }
     });
 }
- 
 
- handleDisconnect(pool);
- 
+handleDisconnect(pool);
 
- module.exports = pool;
+module.exports = pool;

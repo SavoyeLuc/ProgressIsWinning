@@ -1,4 +1,7 @@
 const jwt = require('jsonwebtoken');
+const dotenv = require('dotenv');
+
+dotenv.config();
 
 // Middleware to verify JWT token
 const auth = (req, res, next) => {
@@ -19,7 +22,7 @@ const auth = (req, res, next) => {
         
         // Add user info to request
         req.user = {
-            id: decoded.userId
+            username: decoded.username
         };
         
         next();

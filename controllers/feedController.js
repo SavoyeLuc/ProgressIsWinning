@@ -1,6 +1,18 @@
 const db = require('../config/db');
 
-// Create a new post
+/**
+ * Create a new post
+ * 
+ * @route POST /feed/posts
+ * @param {object} req.body - Post data
+ * @param {string} req.body.title - Post title
+ * @param {string} req.body.body - Post content
+ * @param {string} [req.body.sources] - Optional sources/references
+ * @param {object} req.user - User object from auth middleware
+ * @returns {object} 201 - Post created successfully with postID
+ * @returns {object} 400 - Missing required fields
+ * @returns {object} 500 - Server error
+ */
 exports.createPost = async (req, res) => {
     try {
         const { title, body, sources } = req.body;
@@ -49,7 +61,16 @@ exports.createPost = async (req, res) => {
     }
 };
 
-// Get all posts (with pagination and sorting options)
+/**
+ * Get all posts with pagination and sorting options
+ * 
+ * @route GET /feed/posts
+ * @param {number} [req.query.page=1] - Page number
+ * @param {number} [req.query.limit=10] - Number of posts per page
+ * @param {string} [req.query.sortBy=recent] - Sorting method (recent, balanced, controversial, right, left, moderate)
+ * @returns {object} 200 - List of posts with pagination info
+ * @returns {object} 500 - Server error
+ */
 exports.getPosts = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
@@ -178,7 +199,15 @@ exports.getPosts = async (req, res) => {
     }
 };
 
-// Get a single post by ID
+/**
+ * Get a single post by ID with its comments
+ * 
+ * @route GET /feed/posts/:id
+ * @param {string} req.params.id - Post ID
+ * @returns {object} 200 - Post details with comments
+ * @returns {object} 404 - Post not found
+ * @returns {object} 500 - Server error
+ */
 exports.getPostById = async (req, res) => {
     try {
         const postID = req.params.id;
@@ -284,7 +313,19 @@ exports.getPostById = async (req, res) => {
     }
 };
 
-// Add a comment to a post
+/**
+ * Add a comment to a post or reply to another comment
+ * 
+ * @route POST /feed/comments
+ * @param {object} req.body - Comment data
+ * @param {number} [req.body.postID] - Post ID (required if not replying to a comment)
+ * @param {string} req.body.body - Comment content
+ * @param {number} [req.body.parentCommentID] - Parent comment ID (for replies)
+ * @param {object} req.user - User object from auth middleware
+ * @returns {object} 201 - Comment added successfully with commentID
+ * @returns {object} 400 - Missing required fields
+ * @returns {object} 500 - Server error
+ */
 exports.addComment = async (req, res) => {
     try {
         const { postID, body, parentCommentID } = req.body;
@@ -340,7 +381,19 @@ exports.addComment = async (req, res) => {
     }
 };
 
-// Get comments for a post (with pagination and sorting)
+/**
+ * Get comments for a post with pagination and sorting
+ * 
+ * @route GET /feed/posts/:postID/comments
+ * @param {string} req.params.postID - Post ID
+ * @param {number} [req.query.page=1] - Page number
+ * @param {number} [req.query.limit=20] - Number of comments per page
+ * @param {string} [req.query.sortBy=recent] - Sorting method (recent, controversial, balanced, oldest)
+ * @param {number} [req.query.parentID=null] - Parent comment ID for nested replies
+ * @returns {object} 200 - List of comments with pagination info
+ * @returns {object} 404 - Post not found
+ * @returns {object} 500 - Server error
+ */
 exports.getComments = async (req, res) => {
     try {
         const postID = req.params.postID;
@@ -478,7 +531,20 @@ exports.getComments = async (req, res) => {
     }
 };
 
-// Add a like to a post or comment
+/**
+ * Add a like to a post or comment
+ * 
+ * @route POST /feed/likes
+ * @param {object} req.body - Like data
+ * @param {string} req.body.entityType - Type of entity (POST or COMMENT)
+ * @param {number} req.body.entityID - ID of the entity to like
+ * @param {object} req.user - User object from auth middleware
+ * @returns {object} 201 - Like added successfully with updated like counts
+ * @returns {object} 400 - Invalid entity type
+ * @returns {object} 404 - Entity not found or user not found
+ * @returns {object} 409 - Already liked
+ * @returns {object} 500 - Server error
+ */
 exports.addLike = async (req, res) => {
     try {
         const { entityType, entityID } = req.body;
@@ -582,7 +648,19 @@ exports.addLike = async (req, res) => {
     }
 };
 
-// Remove a like
+/**
+ * Remove a like from a post or comment
+ * 
+ * @route DELETE /feed/likes
+ * @param {object} req.body - Like data
+ * @param {string} req.body.entityType - Type of entity (POST or COMMENT)
+ * @param {number} req.body.entityID - ID of the entity to unlike
+ * @param {object} req.user - User object from auth middleware
+ * @returns {object} 200 - Like removed successfully with updated like counts
+ * @returns {object} 400 - Invalid entity type
+ * @returns {object} 404 - Like not found
+ * @returns {object} 500 - Server error
+ */
 exports.removeLike = async (req, res) => {
     try {
         const { entityType, entityID } = req.body;
