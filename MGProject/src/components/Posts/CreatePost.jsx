@@ -46,7 +46,7 @@ const CreatePost = ({ onClose, onPostCreated }) => {
                         required
                     />
                     <div className="button-group">
-                        <button type="submit">Create Post</button>
+                        <button type="submit" cancel="create-button">Create Post</button>
                         <button type="button" onClick={onClose} className="cancel-button">Cancel</button>
                     </div>
                 </form>
