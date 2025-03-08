@@ -4,7 +4,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
 const authController = require('../controllers/authController');
-const auth = require('../middleware/middleware');
+const auth = require('../middleware/auth');
 
 
 router.post('/register', auth, authController.register);
