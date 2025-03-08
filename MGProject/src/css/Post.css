@@ -1,0 +1,37 @@
+.post {
+    border: 1px solid #ccc;
+    padding: 1rem;
+    margin: 0 auto 1rem;
+    border-radius: 5px;
+    background-color: white;
+    max-width: 800px;
+    width: 90%;
+  }
+  
+  .post header {
+    margin-bottom: 1rem;
+  }
+  
+  .post-body {
+    margin-bottom: 1rem;
+    background-color: white;
+    
+  }
+  
+  .post-actions {
+    display: flex;
+    gap: 1rem;
+  }
+  
+  .post-actions button {
+    padding: 0.5rem 1rem;
+    background-color: #007bff;
+    color: white;
+    cursor: pointer;
+    border: none;
+    border-radius: 5px;
+  }
+  
+  .post-actions button:hover {
+    background-color: #0056b3;
+  }
