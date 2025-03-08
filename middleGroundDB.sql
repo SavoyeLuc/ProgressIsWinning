@@ -213,3 +213,99 @@ END $$
 DELIMITER ;
 
 
+-- PROCEDURE: get all data from a post
+-- Example: CALL getPostData(5); -- Get all data for post with ID 5 
+DELIMITER $$
+
+CREATE PROCEDURE getPostData(
+    IN p_postID INT -- ID of the post to retrieve
+)
+BEGIN
+    -- Validate that the post exists
+    IF NOT EXISTS (SELECT 1 FROM PostsData WHERE postID = p_postID) THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Invalid Post ID';
+    ELSE
+        -- Retrieve post details
+        SELECT 
+            postID,
+            title,
+            body,
+            sources,
+            username AS poster,
+            datePosted
+        FROM PostsData
+        WHERE postID = p_postID;
+    END IF;
+END $$
+
+DELIMITER ;
+
+
+-- PROCEDURE: get all comments for a post
+-- Example: CALL getComments(5); -- Get all comments for post with ID 5
+DELIMITER $$
+
+CREATE PROCEDURE getComments(
+    IN p_postID INT -- ID of the post to retrieve comments for
+)
+BEGIN
+    -- Validate that the post exists
+    IF NOT EXISTS (SELECT 1 FROM PostsData WHERE postID = p_postID) THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Invalid Post ID';
+    ELSE
+        -- Retrieve comments associated with the given post
+        SELECT 
+            commentID,
+            entityType,
+            entityID,
+            username AS commenter,
+            body AS comment,
+            datePosted
+        FROM Comments
+        WHERE entityType = 'POST' AND entityID = p_postID
+        ORDER BY datePosted ASC; -- Ensures comments are displayed in order
+    END IF;
+END $$
+
+DELIMITER ;
+
+
+-- Insert Users for testing
+INSERT INTO Users (username, firstName, lastName, email, passHash, polLean, accVerify)
+VALUES
+    ('johndoe', 'John', 'Doe', 'johndoe@example.com', 'hashedpass123', 'M', TRUE),
+    ('janedoe', 'Jane', 'Doe', 'janedoe@example.com', 'hashedpass456', 'L', TRUE),
+    ('mark123', 'Mark', 'Smith', 'mark123@example.com', 'hashedpass789', 'R', TRUE),
+    ('sarahX', 'Sarah', 'Xavier', 'sarahx@example.com', 'hashedpass111', 'FL', TRUE),
+    ('tomGOP', 'Tom', 'Greene', 'tomgop@example.com', 'hashedpass222', 'FR', TRUE);
+
+-- Insert Posts
+INSERT INTO PostsData (username, title, body, sources)
+VALUES
+    ('johndoe', 'The Green Energy Investment Act', 
+    'A proposed bill aims to allocate $100 billion towards renewable energy infrastructure over the next decade. This will reduce fossil fuel reliance and create jobs in the green energy sector.', 
+    'https://energynews.com'),
+    
+    ('mark123', 'National Voter ID Requirement', 
+    'A new law proposal would require a government-issued photo ID to vote in federal elections. Supporters argue this prevents fraud, while critics believe it could suppress votes.', 
+    'https://govtrack.org');
+
+-- Retrieve post IDs (assuming AUTO_INCREMENT)
+SET @post1 = (SELECT postID FROM PostsData WHERE title = 'The Green Energy Investment Act');
+SET @post2 = (SELECT postID FROM PostsData WHERE title = 'National Voter ID Requirement');
+
+-- Insert Comments for Post 1
+INSERT INTO Comments (entityType, entityID, username, body)
+VALUES
+    ('POST', @post1, 'janedoe', 'Finally, some real investment in our future! Fossil fuels are outdated.'),
+    ('POST', @post1, 'tomGOP', 'Whos paying for this? Our taxes? This is unrealistic spending.'),
+    ('POST', @post1, 'sarahX', 'This should have happened years ago. Lets go even further with clean energy!');
+
+-- Insert Comments for Post 2
+INSERT INTO Comments (entityType, entityID, username, body)
+VALUES
+    ('POST', @post2, 'johndoe', 'This could make voting harder for low-income citizens. Whats the alternative?'),
+    ('POST', @post2, 'tomGOP', 'Election integrity is key! IDs are needed for everything else, why not voting?'),
+    ('POST', @post2, 'sarahX', 'This disproportionately affects minorities and the elderly. Bad idea.');
