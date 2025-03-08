@@ -57,72 +57,7 @@ exports.getPosts = async (req, res) => {
         const sortBy = req.query.sortBy || 'recent'; // Default sort by recency
         const offset = (page - 1) * limit;
 
-        let orderClause = '';
-        
-        // Determine the sorting method
-        switch (sortBy) {
-            case 'balanced':
-                // Sort by how balanced the post is (closest to zero difference between right and left leaning likes)
-                orderClause = `
-                    ABS(
-                        (JSON_EXTRACT(p.likes, '$.FR') + JSON_EXTRACT(p.likes, '$.R') + JSON_EXTRACT(p.likes, '$.SR')) - 
-                        (JSON_EXTRACT(p.likes, '$.FL') + JSON_EXTRACT(p.likes, '$.L') + JSON_EXTRACT(p.likes, '$.SL'))
-                    ) ASC, 
-                    p.datePosted DESC
-                `;
-                break;
-            case 'controversial':
-                // Sort by total likes (most engagement)
-                orderClause = `
-                    (
-                        JSON_EXTRACT(p.likes, '$.FR') + 
-                        JSON_EXTRACT(p.likes, '$.R') + 
-                        JSON_EXTRACT(p.likes, '$.SR') + 
-                        JSON_EXTRACT(p.likes, '$.M') + 
-                        JSON_EXTRACT(p.likes, '$.SL') + 
-                        JSON_EXTRACT(p.likes, '$.L') + 
-                        JSON_EXTRACT(p.likes, '$.FL')
-                    ) DESC, 
-                    p.datePosted DESC
-                `;
-                break;
-            case 'right':
-                // Sort by right-leaning likes
-                orderClause = `
-                    (
-                        JSON_EXTRACT(p.likes, '$.FR') + 
-                        JSON_EXTRACT(p.likes, '$.R') + 
-                        JSON_EXTRACT(p.likes, '$.SR')
-                    ) DESC, 
-                    p.datePosted DESC
-                `;
-                break;
-            case 'left':
-                // Sort by left-leaning likes
-                orderClause = `
-                    (
-                        JSON_EXTRACT(p.likes, '$.FL') + 
-                        JSON_EXTRACT(p.likes, '$.L') + 
-                        JSON_EXTRACT(p.likes, '$.SL')
-                    ) DESC, 
-                    p.datePosted DESC
-                `;
-                break;
-            case 'moderate':
-                // Sort by moderate likes
-                orderClause = `
-                    JSON_EXTRACT(p.likes, '$.M') DESC, 
-                    p.datePosted DESC
-                `;
-                break;
-            case 'recent':
-            default:
-                // Sort by most recent
-                orderClause = 'p.datePosted DESC';
-                break;
-        }
-
-        // Get posts with user information
+        // First, get the posts with basic information
         const [posts] = await db.query(`
             SELECT 
                 p.postID, 
@@ -130,41 +65,73 @@ exports.getPosts = async (req, res) => {
                 p.body, 
                 p.sources, 
                 p.datePosted,
-                p.likes,
                 u.username,
                 u.firstName,
                 u.lastName,
                 u.polLean,
-                (SELECT COUNT(*) FROM Comments WHERE postID = p.postID) AS commentCount,
-                (
-                    JSON_EXTRACT(p.likes, '$.FR') + 
-                    JSON_EXTRACT(p.likes, '$.R') + 
-                    JSON_EXTRACT(p.likes, '$.SR') + 
-                    JSON_EXTRACT(p.likes, '$.M') + 
-                    JSON_EXTRACT(p.likes, '$.SL') + 
-                    JSON_EXTRACT(p.likes, '$.L') + 
-                    JSON_EXTRACT(p.likes, '$.FL')
-                ) AS totalLikes,
-                (
-                    JSON_EXTRACT(p.likes, '$.FR') + 
-                    JSON_EXTRACT(p.likes, '$.R') + 
-                    JSON_EXTRACT(p.likes, '$.SR')
-                ) AS rightLikes,
-                (
-                    JSON_EXTRACT(p.likes, '$.FL') + 
-                    JSON_EXTRACT(p.likes, '$.L') + 
-                    JSON_EXTRACT(p.likes, '$.SL')
-                ) AS leftLikes,
-                JSON_EXTRACT(p.likes, '$.M') AS moderateLikes,
-                ABS(
-                    (JSON_EXTRACT(p.likes, '$.FR') + JSON_EXTRACT(p.likes, '$.R') + JSON_EXTRACT(p.likes, '$.SR')) - 
-                    (JSON_EXTRACT(p.likes, '$.FL') + JSON_EXTRACT(p.likes, '$.L') + JSON_EXTRACT(p.likes, '$.SL'))
-                ) AS polarizationScore
+                (SELECT COUNT(*) FROM Comments WHERE postID = p.postID) AS commentCount
             FROM PostsData p
             JOIN Users u ON p.username = u.username
-            ORDER BY ${orderClause}
+            ORDER BY p.datePosted DESC
             LIMIT ? OFFSET ?
         `, [limit, offset]);
+
+        // Get like counts for each post
+        for (const post of posts) {
+            const [likeCounts] = await db.query(`
+                SELECT 
+                    polLean,
+                    COUNT(*) as count
+                FROM Likes
+                WHERE entityType = 'POST' AND entityID = ?
+                GROUP BY polLean
+            `, [post.postID]);
+            
+            // Initialize likes object with zeros
+            post.likes = {
+                'FL': 0, 'L': 0, 'SL': 0, 'M': 0, 'SR': 0, 'R': 0, 'FR': 0
+            };
+            
+            // Fill in actual counts
+            likeCounts.forEach(like => {
+                post.likes[like.polLean] = like.count;
+            });
+            
+            // Calculate additional metrics
+            post.totalLikes = Object.values(post.likes).reduce((sum, count) => sum + count, 0);
+            post.rightLikes = post.likes['FR'] + post.likes['R'] + post.likes['SR'];
+            post.leftLikes = post.likes['FL'] + post.likes['L'] + post.likes['SL'];
+            post.moderateLikes = post.likes['M'];
+            post.polarizationScore = Math.abs(post.rightLikes - post.leftLikes);
+        }
+
+        // Sort posts based on the requested criteria
+        switch (sortBy) {
+            case 'balanced':
+                // Sort by how balanced the post is (closest to zero difference between right and left leaning likes)
+                posts.sort((a, b) => a.polarizationScore - b.polarizationScore);
+                break;
+            case 'controversial':
+                // Sort by total likes (most engagement)
+                posts.sort((a, b) => b.totalLikes - a.totalLikes);
+                break;
+            case 'right':
+                // Sort by right-leaning likes
+                posts.sort((a, b) => b.rightLikes - a.rightLikes);
+                break;
+            case 'left':
+                // Sort by left-leaning likes
+                posts.sort((a, b) => b.leftLikes - a.leftLikes);
+                break;
+            case 'moderate':
+                // Sort by moderate likes
+                posts.sort((a, b) => b.moderateLikes - a.moderateLikes);
+                break;
+            case 'recent':
+            default:
+                // Already sorted by datePosted DESC in the SQL query
+                break;
+        }
 
         // Get total count of posts
         const [countResult] = await db.query('SELECT COUNT(*) as total FROM PostsData');
@@ -202,7 +169,6 @@ exports.getPostById = async (req, res) => {
                 p.body, 
                 p.sources, 
                 p.datePosted,
-                p.likes,
                 u.username,
                 u.firstName,
                 u.lastName,
@@ -221,13 +187,32 @@ exports.getPostById = async (req, res) => {
 
         const post = posts[0];
 
+        // Get like counts for the post
+        const [likeCounts] = await db.query(`
+            SELECT 
+                polLean,
+                COUNT(*) as count
+            FROM Likes
+            WHERE entityType = 'POST' AND entityID = ?
+            GROUP BY polLean
+        `, [postID]);
+        
+        // Initialize likes object with zeros
+        post.likes = {
+            'FL': 0, 'L': 0, 'SL': 0, 'M': 0, 'SR': 0, 'R': 0, 'FR': 0
+        };
+        
+        // Fill in actual counts
+        likeCounts.forEach(like => {
+            post.likes[like.polLean] = like.count;
+        });
+
         // Get comments for the post
         const [comments] = await db.query(`
             SELECT 
                 c.commentID, 
                 c.body, 
                 c.datePosted,
-                c.likes,
                 c.parentCommentID,
                 u.username,
                 u.firstName,
@@ -238,6 +223,28 @@ exports.getPostById = async (req, res) => {
             WHERE c.postID = ?
             ORDER BY c.datePosted ASC
         `, [postID]);
+
+        // Get like counts for each comment
+        for (const comment of comments) {
+            const [commentLikeCounts] = await db.query(`
+                SELECT 
+                    polLean,
+                    COUNT(*) as count
+                FROM Likes
+                WHERE entityType = 'COMMENT' AND entityID = ?
+                GROUP BY polLean
+            `, [comment.commentID]);
+            
+            // Initialize likes object with zeros
+            comment.likes = {
+                'FL': 0, 'L': 0, 'SL': 0, 'M': 0, 'SR': 0, 'R': 0, 'FR': 0
+            };
+            
+            // Fill in actual counts
+            commentLikeCounts.forEach(like => {
+                comment.likes[like.polLean] = like.count;
+            });
+        }
 
         // Add comments to post
         post.comments = comments;
@@ -378,61 +385,166 @@ exports.addComment = async (req, res) => {
     }
 };
 
-// Like a post
-exports.likePost = async (req, res) => {
+// Like a post or comment
+exports.addLike = async (req, res) => {
     try {
-        const { postID, likeType } = req.body;
+        const { entityType, entityID } = req.body;
         const username = req.user.username;
-
-        // Validate required fields
-        if (!postID || !likeType) {
-            return res.status(400).json({
-                success: false,
-                message: 'Post ID and like type are required'
-            });
-        }
-
-        // Validate like type
-        const validLikeTypes = ['FL', 'L', 'SL', 'M', 'SR', 'R', 'FR'];
-        if (!validLikeTypes.includes(likeType)) {
-            return res.status(400).json({
-                success: false,
-                message: 'Invalid like type. Must be one of: FL, L, SL, M, SR, R, FR'
-            });
-        }
-
-        // Check if post exists
-        const [posts] = await db.query('SELECT postID, likes FROM PostsData WHERE postID = ?', [postID]);
         
-        if (posts.length === 0) {
+        // Get user's political leaning
+        const [users] = await db.query(
+            'SELECT polLean FROM Users WHERE username = ?',
+            [username]
+        );
+        
+        if (users.length === 0) {
             return res.status(404).json({
                 success: false,
-                message: 'Post not found'
+                message: 'User not found'
             });
         }
-
-        // Get current likes
-        const currentLikes = JSON.parse(posts[0].likes);
         
-        // Increment the like count for the specified type
-        currentLikes[likeType] += 1;
-
-        // Update the post with new likes
-        await db.query(
-            'UPDATE PostsData SET likes = ? WHERE postID = ?',
-            [JSON.stringify(currentLikes), postID]
-        );
-
-        res.json({
-            success: true,
-            message: 'Post liked successfully',
-            likes: currentLikes
-        });
+        const userPolLean = users[0].polLean;
+        
+        // Validate entity type
+        if (!['POST', 'COMMENT'].includes(entityType)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Entity type must be either POST or COMMENT'
+            });
+        }
+        
+        // Check if the entity exists
+        let entityExists = false;
+        if (entityType === 'POST') {
+            const [posts] = await db.query(
+                'SELECT postID FROM PostsData WHERE postID = ?',
+                [entityID]
+            );
+            entityExists = posts.length > 0;
+        } else {
+            const [comments] = await db.query(
+                'SELECT commentID FROM Comments WHERE commentID = ?',
+                [entityID]
+            );
+            entityExists = comments.length > 0;
+        }
+        
+        if (!entityExists) {
+            return res.status(404).json({
+                success: false,
+                message: `${entityType.toLowerCase()} not found`
+            });
+        }
+        
+        // Call the stored procedure to insert like
+        try {
+            const [result] = await db.query(
+                'CALL insertLike(?, ?, ?, ?)',
+                [username, entityType, entityID, userPolLean]
+            );
+            
+            if (result[0][0].message === 'Like Added') {
+                // Get updated like counts
+                const [likeCounts] = await db.query(`
+                    SELECT 
+                        polLean,
+                        COUNT(*) as count
+                    FROM Likes
+                    WHERE entityType = ? AND entityID = ?
+                    GROUP BY polLean
+                `, [entityType, entityID]);
+                
+                // Format like counts into an object
+                const likes = {
+                    'FL': 0, 'L': 0, 'SL': 0, 'M': 0, 'SR': 0, 'R': 0, 'FR': 0
+                };
+                
+                likeCounts.forEach(like => {
+                    likes[like.polLean] = like.count;
+                });
+                
+                return res.status(201).json({
+                    success: true,
+                    message: 'Like added successfully',
+                    likes
+                });
+            }
+        } catch (error) {
+            // Handle duplicate like error
+            if (error.message.includes('Like Already Exists')) {
+                return res.status(409).json({
+                    success: false,
+                    message: 'You have already liked this item'
+                });
+            }
+            throw error;
+        }
     } catch (error) {
-        console.error('Like post error:', error);
+        console.error('Add like error:', error);
         res.status(500).json({
             success: false,
-            message: 'Server error while liking post'
+            message: 'Server error while adding like'
+        });
+    }
+};
+
+// Remove a like
+exports.removeLike = async (req, res) => {
+    try {
+        const { entityType, entityID } = req.body;
+        const username = req.user.username;
+        
+        // Validate entity type
+        if (!['POST', 'COMMENT'].includes(entityType)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Entity type must be either POST or COMMENT'
+            });
+        }
+        
+        // Delete the like
+        const [result] = await db.query(
+            'DELETE FROM Likes WHERE username = ? AND entityType = ? AND entityID = ?',
+            [username, entityType, entityID]
+        );
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Like not found'
+            });
+        }
+        
+        // Get updated like counts
+        const [likeCounts] = await db.query(`
+            SELECT 
+                polLean,
+                COUNT(*) as count
+            FROM Likes
+            WHERE entityType = ? AND entityID = ?
+            GROUP BY polLean
+        `, [entityType, entityID]);
+        
+        // Format like counts into an object
+        const likes = {
+            'FL': 0, 'L': 0, 'SL': 0, 'M': 0, 'SR': 0, 'R': 0, 'FR': 0
+        };
+        
+        likeCounts.forEach(like => {
+            likes[like.polLean] = like.count;
+        });
+        
+        res.json({
+            success: true,
+            message: 'Like removed successfully',
+            likes
+        });
+    } catch (error) {
+        console.error('Remove like error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error while removing like'
         });
     }
 };
@@ -564,65 +676,6 @@ exports.getComments = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Server error while fetching comments'
-        });
-    }
-};
-
-// Like a comment
-exports.likeComment = async (req, res) => {
-    try {
-        const { commentID, likeType } = req.body;
-        const username = req.user.username;
-
-        // Validate required fields
-        if (!commentID || !likeType) {
-            return res.status(400).json({
-                success: false,
-                message: 'Comment ID and like type are required'
-            });
-        }
-
-        // Validate like type
-        const validLikeTypes = ['FL', 'L', 'SL', 'M', 'SR', 'R', 'FR'];
-        if (!validLikeTypes.includes(likeType)) {
-            return res.status(400).json({
-                success: false,
-                message: 'Invalid like type. Must be one of: FL, L, SL, M, SR, R, FR'
-            });
-        }
-
-        // Check if comment exists
-        const [comments] = await db.query('SELECT commentID, likes FROM Comments WHERE commentID = ?', [commentID]);
-        
-        if (comments.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'Comment not found'
-            });
-        }
-
-        // Get current likes
-        const currentLikes = JSON.parse(comments[0].likes);
-        
-        // Increment the like count for the specified type
-        currentLikes[likeType] += 1;
-
-        // Update the comment with new likes
-        await db.query(
-            'UPDATE Comments SET likes = ? WHERE commentID = ?',
-            [JSON.stringify(currentLikes), commentID]
-        );
-
-        res.json({
-            success: true,
-            message: 'Comment liked successfully',
-            likes: currentLikes
-        });
-    } catch (error) {
-        console.error('Like comment error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Server error while liking comment'
         });
     }
 };
