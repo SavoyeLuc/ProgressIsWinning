@@ -3,14 +3,14 @@
   min-height: 100vh;
   background: white;
   padding: 20px;
-  color: black;
 }
 
 .home-container h1 {
   text-align: center;
   margin-bottom: 2rem;
   font-size: 22px;
-  color: #663399;
+  color: rgb(158, 9, 216);
+  text-shadow: 0 0 8px rgba(170, 0, 255, 0.3); /* Soft glow */
 }
 
 .home-container header {
@@ -19,15 +19,43 @@
   align-items: center;
   padding: 1rem;
   background: white;
-  box-shadow: 0 4px 8px rgba(175, 128, 255, 0.2);
+  box-shadow: 0 2px 6px rgba(170, 0, 255, 0.2);
   border-radius: 10px;
 }
 
+.home-container header button {
+  padding: 0.5rem 1rem;
+  background: #9e1bd6;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.3s, box-shadow 0.3s;
+}
+
+.home-container header button:hover {
+  background: #dd76f5;
+  box-shadow: 0 0 10px rgba(217, 121, 255, 0.4);
+}
+
+.home-container main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+/* Header Button Group */
+.header-buttons {
+  display: flex;
+  gap: 1rem;
+}
+
+/* Create Button */
 .create-button {
-  padding: 0.6rem 1.2rem;
+  padding: 0.5rem 1rem;
   background: white;
-  color: #663399;
-  border: 2px solid #af80ff;
+  color: #b730c6;
+  border: 2px solid #9e1bd6;
   border-radius: 6px;
   font-size: 1rem;
   cursor: pointer;
@@ -35,7 +63,7 @@
 }
 
 .create-button:hover {
-  background: #af80ff;
+  background: #dd76f5;
   color: white;
-  box-shadow: 0 0 12px rgba(175, 128, 255, 0.4);
+  box-shadow: 0 0 12px rgba(217, 121, 255, 0.4);
 }
