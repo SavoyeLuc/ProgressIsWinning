@@ -18,15 +18,41 @@ const Post = ({ post }) => {
   ];
 
   const handleUpvote = () => {
-    // Logic for upvoting the post
+    setIsLikeModalOpen(true);
   };
 
   const handleShare = () => {
-    // Logic for sharing the post
+    if (navigator.share) {
+      navigator.share({
+        title: post.title,
+        text: post.content,
+        url: window.location.href
+      }).catch((error) => console.log('Error sharing:', error));
+    } else {
+      // Fallback for browsers that don't support the Web Share API
+      const url = window.location.href;
+      navigator.clipboard.writeText(url)
+        .then(() => alert('Link copied to clipboard!'))
+        .catch((err) => console.error('Failed to copy:', err));
+    }
   };
 
   const handleComment = () => {
-    // Logic for commenting on the post
+    setIsCommentModalOpen(true);
+  };
+  
+  const handleCommentSubmit = async () => {
+    if (!commentText.trim()) return;
+
+    try {
+      const newComment = await addComment(post.id, commentText);
+      // Add the new comment to the local state
+      comments.push(newComment);
+      setCommentText('');
+      setIsCommentModalOpen(false);
+    } catch (error) {
+      console.error('Failed to add comment:', error);
+    }
   };
 
   const formatDate = (date) => {
@@ -56,6 +82,7 @@ const Post = ({ post }) => {
       <div className="post-actions">
         <button onClick={handleUpvote}>Upvote</button>
         <button onClick={handleShare}>Share</button>
+        <button onClick={handleComment}>Comment</button>
       </div>
 
       {/* Like bar */}
