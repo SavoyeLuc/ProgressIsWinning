@@ -9,10 +9,8 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/posts', require('./routes/posts'));
-app.use('/api/users', require('./routes/users'));
-app.use('/api/comments', require('./routes/comments'));
+app.use('/auth', require('./routes/auth'));
+app.use('/feed', require('./routes/feed'));
 
 // Error handler
 app.use((err, req, res, next) => {
