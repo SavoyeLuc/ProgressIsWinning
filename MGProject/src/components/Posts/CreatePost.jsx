@@ -11,18 +11,15 @@ const CreatePost = ({ onClose, onPostCreated }) => {
             id: Date.now(),
             title,
             content,
-            author: 'Anonymous', // This should be replaced with actual user data later
+            author: 'Anonymous',
             timestamp: new Date().toISOString(),
             likeCounts: { FL: 0, L: 0, SL: 0, M: 0, SR: 0, R: 0, FR: 0 }
         };
 
-        // Get existing posts from localStorage
-        const existingPosts = JSON.parse(localStorage.getItem('posts') || '[]');
-        const updatedPosts = [newPost, ...existingPosts];
-        
         // Save to localStorage
-        localStorage.setItem('posts', JSON.stringify(updatedPosts));
-        
+        const existingPosts = JSON.parse(localStorage.getItem('posts') || '[]');
+        localStorage.setItem('posts', JSON.stringify([newPost, ...existingPosts]));
+
         onPostCreated(newPost);
         onClose();
     };
@@ -42,11 +39,11 @@ const CreatePost = ({ onClose, onPostCreated }) => {
                     <textarea
                         value={content}
                         onChange={(e) => setContent(e.target.value)}
-                        placeholder="Post Content"
+                        placeholder="Write your thoughts..."
                         required
                     />
                     <div className="button-group">
-                        <button type="submit">Create Post</button>
+                        <button type="submit" className="create-button">Create Post</button>
                         <button type="button" onClick={onClose} className="cancel-button">Cancel</button>
                     </div>
                 </form>
