@@ -35,3 +35,23 @@
   .post-actions button:hover {
     background-color: #0056b3;
   }
+
+  .like-bar-container {
+    display: flex;
+    align-items: center;
+    margin-top: 10px;
+  }
+  
+  .total-likes {
+    margin-right: 10px;
+    font-weight: bold;
+  }
+  
+  .like-bar {
+    display: flex;
+    width: 100%;
+    height: 10px;
+    border-radius: 5px;
+    overflow: hidden;
+    background-color: #eee;
+  }
