@@ -1,39 +1,23 @@
 {
-  "name": "progressiswinning",
-  "version": "1.0.0",
-  "description": "website founded on trying to find a real middle ground for political solutions",
-  "main": "index.js",
+  "name": "reddit-clone",
+  "version": "0.1.0",
+  "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/SavoyeLuc/ProgressIsWinning.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/SavoyeLuc/ProgressIsWinning/issues"
-  },
-  "homepage": "https://github.com/SavoyeLuc/ProgressIsWinning#readme",
   "dependencies": {
-    "axios": "^1.8.2",
-    "bcryptjs": "^3.0.2",
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.7",
-    "express": "^4.21.2",
-    "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.12.1",
-    "mysql2": "^3.13.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-router-dom": "^7.3.0"
+    "next": "15.2.1"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^4.3.4",
-    "concurrently": "^9.1.2",
-    "nodemon": "^3.1.9",
-    "vite": "^6.2.1"
+    "@tailwindcss/postcss": "^4",
+    "tailwindcss": "^4",
+    "eslint": "^9",
+    "eslint-config-next": "15.2.1",
+    "@eslint/eslintrc": "^3"
   }
 }
