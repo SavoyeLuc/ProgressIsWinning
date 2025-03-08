@@ -9,13 +9,14 @@
   width: 100%;
   padding: 0.8rem 1rem;
   font-size: 1rem;
-  border: 2px solid #ccc;
+  border: 2px solid rgba(175, 128, 255, 0.3);
   border-radius: 4px;
   background-color: white;
-  transition: border-color 0.3s ease;
+  transition: border-color 0.3s ease, box-shadow 0.3s;
 }
 
 .search-bar input:focus {
   outline: none;
-  border-color: #6652BE;
+  border-color: #af80ff;
+  box-shadow: 0 0 8px rgba(175, 128, 255, 0.4);
 }
