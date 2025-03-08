@@ -1,5 +1,5 @@
 -- Step 1: Create the database
-DROP DATABASE MiddleGroundDB;
+DROP DATABASE IF EXISTS MiddleGroundDB;
 CREATE DATABASE MiddleGroundDB;
 USE MiddleGroundDB;
 
@@ -23,7 +23,15 @@ CREATE TABLE PostsData (
     body TEXT NOT NULL,
     sources TEXT NULL,
     datePosted TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    likes ENUM('FR', 'R', 'SR', 'M', 'SL', 'L', 'FL') NOT NULL DEFAULT 'M', -- Tracks political lean of most engagement
+    likes JSON NOT NULL DEFAULT ('{
+        "FR": 0, 
+        "R": 0, 
+        "SR": 0, 
+        "M": 0, 
+        "SL": 0, 
+        "L": 0, 
+        "FL": 0
+    }'), -- Stores the count of each type of like
     FOREIGN KEY (userID) REFERENCES Users(userID) ON DELETE CASCADE
 );
 
@@ -35,7 +43,15 @@ CREATE TABLE Comments (
     parentCommentID INT NULL, -- NULL if it's a top-level comment, otherwise links to another comment
     body TEXT NOT NULL,
     datePosted TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    likes ENUM('FR', 'R', 'SR', 'M', 'SL', 'L', 'FL') NOT NULL DEFAULT 'M', -- Tracks political lean of most engagement
+    likes JSON NOT NULL DEFAULT ('{
+        "FR": 0, 
+        "R": 0, 
+        "SR": 0, 
+        "M": 0, 
+        "SL": 0, 
+        "L": 0, 
+        "FL": 0
+    }'), -- Stores the count of each type of like
     FOREIGN KEY (postID) REFERENCES PostsData(postID) ON DELETE CASCADE,
     FOREIGN KEY (userID) REFERENCES Users(userID) ON DELETE CASCADE,
     FOREIGN KEY (parentCommentID) REFERENCES Comments(commentID) ON DELETE CASCADE -- Enables nesting
