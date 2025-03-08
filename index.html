@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Middleground</title>
+    <link rel="stylesheet" href="styles.css">
+    <script defer src="script.js"></script>
+</head>
+<body>
+    <!-- HEADER -->
+    <header>
+        <h1>Middleground</h1>
+        <nav>
+            <ul>
+                <li><a href="#">Home</a></li>
+                <li><a href="#">Issues</a></li>
+                <li><a href="#">Post a Solution</a></li>
+                <li><a href="#">Profile</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main>
+        <!-- Post Creation Box -->
+        <section class="post-box">
+            <h2>Propose a Solution</h2>
+            <input type="text" id="postTitle" placeholder="Enter issue title..." required>
+            <textarea id="postContent" placeholder="Describe your solution..." required></textarea>
+            <input type="url" id="postSource" placeholder="Provide a source (URL required)" required>
+            <button onclick="submitPost()">Submit</button>
+        </section>
+
+        <!-- Feed Section -->
+        <section id="feed">
+            <h2>Recent Solutions</h2>
+            <div id="posts-container"></div>
+        </section>
+    </main>
+</body>
+</html>
