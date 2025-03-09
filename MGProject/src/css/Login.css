@@ -7,7 +7,7 @@
   font-family: "Montserrat", sans-serif;
 }
 
-body.auth-page {
+body {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -253,12 +253,18 @@ body.auth-page {
   display: none;
 }
 
-.material-symbols-rounded {
-  font-size: 1.25rem;
-  color: #9284c8;
-  transition: color 0.2s ease;
+/* Add this to your existing Login.css file */
+.error-message {
+  color: #e74c3c;
+  background-color: #fde8e6;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  text-align: center;
+  font-size: 0.9rem;
 }
 
-.input-field:focus ~ .material-symbols-rounded {
-  color: #5F41E4;
+.login-button:disabled {
+  background: #b3b3b3;
+  cursor: not-allowed;
 }

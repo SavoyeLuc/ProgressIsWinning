@@ -1,9 +1,10 @@
-import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import InputField from "./components/Login/InputField";
 import Home from './pages/Home';
 import CreatePost from './components/Posts/CreatePost';
 import SignUp from './components/Login/SignUp';
+import { setAuthToken, setUserData } from './utils/auth';
 
 const AuthLayout = ({ children }) => {
   useEffect(() => {
@@ -16,46 +17,88 @@ const AuthLayout = ({ children }) => {
 
 const LoginForm = () => {
   const navigate = useNavigate();
-  const url = 'github.com/auth/login';
+  const [formData, setFormData] = useState({
+    username: '',
+    password: ''
+  });
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    fetch(url, {
-      method: 'POST',
-      headers: {
-      'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-      username: e.target[0].value,
-      password: e.target[1].value,
-      }),
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-      navigate('/home');
-      } else {
-        
-      // handle login failure
-      console.error('Login failed:', data.message);
-      }
-    })
-    .catch(error => {
-      console.error('Error:', error);
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value
     });
+  };
 
-    navigate('/home');
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+
+    try {
+      // Call login API
+      const response = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      });
+
+      const data = await response.json();
+      console.log('Login response:', data);
+
+      if (response.status !== 200 && response.status !== 201) {
+        throw new Error(data.message || 'Login failed');
+      }
+
+      // Store token and user data
+      setAuthToken(data.token);
+      setUserData(data.user);
+
+      // Redirect to home page
+      navigate('/home');
+    } catch (err) {
+      console.error('Login error:', err);
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <AuthLayout>
       <div className="login-container">
+        <h2 className="form-title">Log In</h2>
+        {error && <div className="error-message">{error}</div>}
         <form onSubmit={handleSubmit} className="login-form">
-          <InputField type="email" placeholder="Email address" icon="mail" />
-          <InputField type="password" placeholder="Password" icon="lock" />
+          <InputField 
+            type="text"
+            placeholder="Username"
+            icon="account_circle"
+            name="username"
+            value={formData.username}
+            onChange={handleInputChange}
+          />
+          <InputField 
+            type="password" 
+            placeholder="Password" 
+            icon="lock" 
+            name="password"
+            value={formData.password}
+            onChange={handleInputChange}
+          />
 
           <a href="#" className="forgot-password-link">Forgot password?</a>
-          <button type="submit" className="login-button">Log In</button>
+          <button 
+            type="submit" 
+            className="login-button"
+            disabled={isLoading}
+          >
+            {isLoading ? 'Logging In...' : 'Log In'}
+          </button>
         </form>
 
         <p className="signup-prompt">
