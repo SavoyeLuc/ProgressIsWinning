@@ -1,0 +1,23 @@
+.navbar {
+  background: white;
+  padding: 1rem;
+  box-shadow: 0 2px 6px rgba(175, 128, 255, 0.2);
+}
+
+.navbar ul {
+  list-style-type: none;
+  display: flex;
+  gap: 1.5rem;
+}
+
+.navbar ul li a {
+  color: #663399;
+  text-decoration: none;
+  font-weight: bold;
+  transition: color 0.3s, text-shadow 0.3s;
+}
+
+.navbar ul li a:hover {
+  color: #af80ff;
+  text-shadow: 0 0 6px rgba(175, 128, 255, 0.3);
+}

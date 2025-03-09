@@ -1,0 +1,126 @@
+.user-profile-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+    min-height: 80vh;
+}
+
+.user-profile-card {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 500px;
+    overflow: hidden;
+}
+
+.user-profile-header {
+    background: linear-gradient(135deg, #6652BE, #8B78E6);
+    color: white;
+    padding: 2rem;
+    text-align: center;
+}
+
+.user-profile-image {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 4px solid white;
+    object-fit: cover;
+    margin-bottom: 1rem;
+}
+
+.user-profile-name {
+    margin: 0.5rem 0;
+    font-size: 1.8rem;
+}
+
+.user-profile-username {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 1.1rem;
+}
+
+.user-profile-details {
+    padding: 1.5rem;
+}
+
+.user-profile-detail {
+    margin-bottom: 1rem;
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 0.5rem;
+}
+
+.detail-label {
+    font-weight: bold;
+    color: #666;
+}
+
+.detail-value {
+    color: #333;
+}
+
+.user-profile-stats {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 1.5rem;
+    text-align: center;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #6652BE;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.user-profile-loading,
+.user-profile-error {
+    text-align: center;
+    padding: 2rem;
+    color: #666;
+    font-size: 1.2rem;
+}
+
+.user-profile-error {
+    color: #e53935;
+}
+
+.user-profile {
+    text-align: center;
+    padding: 2rem;
+    margin: 1rem auto;
+    max-width: 500px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.welcome-message {
+    color: #6652BE;
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+}
+
+.user-info {
+    text-align: left;
+    padding: 1rem;
+    background-color: #f9f9f9;
+    border-radius: 6px;
+}
+
+.user-info p {
+    margin: 0.5rem 0;
+} 
