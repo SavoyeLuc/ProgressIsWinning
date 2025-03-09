@@ -5,6 +5,8 @@ import Home from './pages/Home';
 import CreatePost from './components/Posts/CreatePost';
 import SignUp from './components/Login/SignUp';
 import CreateComment from './components/Comments/CreateComment';
+import { login } from './utils/api';
+import { setAuthToken, setUserData } from './utils/auth';
 
 const AuthLayout = ({ children }) => {
   useEffect(() => {
@@ -39,24 +41,12 @@ const LoginForm = () => {
 
     try {
       // Call login API
-      const response = await fetch('http://localhost:5000/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
-      });
-
-      const data = await response.json();
-      console.log('Login response:', data);
-
-      if (response.status !== 200 && response.status !== 201) {
-        throw new Error(data.message || 'Login failed');
-      }
+      const response = await login(formData.username, formData.password);
+      console.log('Login response:', response);
 
       // Store token and user data
-      setAuthToken(data.token);
-      setUserData(data.user);
+      setAuthToken(response.token);
+      setUserData(response.user);
 
       // Redirect to home page
       navigate('/home');

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import InputField from './InputField';
 import { setAuthToken, setUserData } from '../../utils/auth';
+import { register } from '../../utils/api';
 
 // API base URL
 const API_URL = 'http://localhost:5000/';
@@ -51,31 +52,19 @@ const SignUp = () => {
         polLean: dotToPolLean[selectedDot]
       };
       
-      // Log the exact data being sent
       console.log('Sending data to API:', JSON.stringify(apiData));
 
       // Call registration API
-      const response = await fetch(`http://localhost:5000/api/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(apiData)
-      });
+      const response = await register(apiData);
+      console.log('Response data:', response);
 
-      // Log the response status and headers
-      console.log('Response status:', response.status);
-      
-      const data = await response.json();
-      console.log('Response data:', data);
-
-      if (response.status !== 200 && response.status !== 201) {
-        throw new Error(data.message || 'Registration failed');
+      if (!response.success) {
+        throw new Error(response.message || 'Registration failed');
       }
 
       // Store token and user data
-      setAuthToken(data.token);
-      setUserData(data.user);
+      setAuthToken(response.token);
+      setUserData(response.user);
 
       // Redirect to home page
       navigate('/home');

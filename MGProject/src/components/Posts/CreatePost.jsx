@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { apiRequest } from '../../utils/api';
+import { createPost } from '../../utils/api';
 import '../../css/CreatePost.css';
 
 const CreatePost = ({ onClose, onPostCreated }) => {
@@ -23,10 +23,7 @@ const CreatePost = ({ onClose, onPostCreated }) => {
             };
 
             // Send request to API
-            const response = await apiRequest('/feed/posts', {
-                method: 'POST',
-                body: JSON.stringify(postData)
-            });
+            const response = await createPost(postData);
 
             console.log('Post created:', response);
 

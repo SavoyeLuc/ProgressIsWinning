@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Post from './Post';
-import { apiRequest } from '../../utils/api';
+import { getPosts } from '../../utils/api';
 import '../../css/PostList.css';
 
 const PostList = ({ sortBy = 'recent' }) => {
@@ -20,7 +20,7 @@ const PostList = ({ sortBy = 'recent' }) => {
     setError('');
     
     try {
-      const response = await apiRequest(`/feed/posts?page=${page}&limit=10&sortBy=${sortBy}`);
+      const response = await getPosts(page, 10, sortBy);
       
       console.log('Fetched posts:', response);
       

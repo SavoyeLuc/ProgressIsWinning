@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import CommentList from '../Comments/CommentList';
-import { apiRequest } from '../../utils/api';
+import { likePost, addComment, getComments } from '../../utils/api';
 import { getUserData, isAuthenticated } from '../../utils/auth';
 import { useNavigate } from 'react-router-dom';
 import '../../css/Post.css';
@@ -64,14 +64,7 @@ const Post = ({ post }) => {
     setError('');
 
     try {
-      const response = await apiRequest('/feed/likes', {
-        method: 'POST',
-        body: JSON.stringify({
-          entityType: 'POST',
-          entityID: post.id
-        })
-      });
-
+      const response = await likePost(post.id);
       console.log('Like response:', response);
       
       // Update like counts with the response from the server
@@ -80,7 +73,7 @@ const Post = ({ post }) => {
       }
     } catch (err) {
       console.error('Error liking post:', err);
-     // setError('Failed to like post. ' + err.message);
+      // setError('Failed to like post. ' + err.message);
     } finally {
       setIsLiking(false);
     }
@@ -98,20 +91,9 @@ const Post = ({ post }) => {
     setIsSubmittingComment(true);
     setError('');
     console.log(commentText);
+    
     try {
-      const response = await apiRequest('/feed/comments', {
-        method: 'POST',
-        body: JSON.stringify({
-          entityType: 'POST',
-          postID: post.id,
-
-
-
-
-          body: commentText
-        })
-      });
-
+      const response = await addComment(post.id, commentText);
       console.log('Comment response:', response);
 
       // Get user data for display
@@ -145,7 +127,7 @@ const Post = ({ post }) => {
     if (showComments && comments.length === 0) {
       const fetchComments = async () => {
         try {
-          const response = await apiRequest(`/feed/comments?postID=${post.id}`);
+          const response = await getComments(post.id);
           
           if (response.success && response.comments) {
             // Transform API comments to match our format
