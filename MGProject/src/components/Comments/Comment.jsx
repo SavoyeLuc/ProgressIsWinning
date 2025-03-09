@@ -1,3 +1,4 @@
+// Comment.jsx
 const Comment = ({ comment }) => {
     return (
       <div className="comment">
