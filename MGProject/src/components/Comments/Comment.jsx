@@ -1,9 +1,9 @@
 const Comment = ({ comment }) => {
-  return (
-    <div className="comment">
-      <p><strong>{comment.username}:</strong> {comment.content}</p> {/* ✅ Show username */}
-    </div>
-  );
-};
-
-export default Comment;
+    return (
+      <div className="comment">
+        <p>{comment.content}</p>
+      </div>
+    );
+  };
+  
+  export default Comment;
