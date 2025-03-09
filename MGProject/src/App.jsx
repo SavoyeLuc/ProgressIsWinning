@@ -4,6 +4,7 @@ import InputField from "./components/Login/InputField";
 import Home from './pages/Home';
 import CreatePost from './components/Posts/CreatePost';
 import SignUp from './components/Login/SignUp';
+import CreateComment from './components/Comments/CreateComment';
 
 const AuthLayout = ({ children }) => {
   useEffect(() => {
@@ -77,7 +78,7 @@ const App = () => {
         <Route path="/login" element={<AuthLayout><LoginForm /></AuthLayout>} />
         <Route path="/signup" element={<AuthLayout><SignUp /></AuthLayout>} />
         <Route path="/home" element={<Home />} />
-        <Route path="/create-post" element={<CreatePost />} />
+        <Route path="/create-post" element={<CreatePost onClose={() => {}} />} />
         <Route path="/create-comment" element={<CreateComment />} />
       </Routes>
     </Router>
