@@ -15,7 +15,7 @@ const LIKE_COLORS = {
   FR: '#ad0000'   // Dark Red
 };
 
-const Post = ({ post }) => {
+const Post = ({ post, onCommentAdded }) => {
   const navigate = useNavigate();
   const [showComments, setShowComments] = useState(false);
   const [showCommentBox, setShowCommentBox] = useState(false);
@@ -45,7 +45,7 @@ const Post = ({ post }) => {
   };
 
   const handleCommentClick = () => {
-    // Check if user is authenticated
+    // Check if user is authenticated 
     if (!isAuthenticated()) {
       navigate('/login');
       return;
@@ -65,7 +65,7 @@ const Post = ({ post }) => {
 
     try {
       const response = await likePost(post.id);
-      console.log('Like response:', response);
+     // console.log('Like response:', response);
       
       // Update like counts with the response from the server
       if (response.success && response.likes) {
@@ -90,7 +90,6 @@ const Post = ({ post }) => {
 
     setIsSubmittingComment(true);
     setError('');
-    console.log(commentText);
     
     try {
       const response = await addComment(post.id, commentText);
@@ -99,7 +98,7 @@ const Post = ({ post }) => {
       // Get user data for display
       const userData = getUserData();
       
-      // Create new comment with user data
+      // Create new comment
       const newComment = {
         id: response.commentID,
         username: userData?.username || 'Anonymous',
@@ -109,6 +108,12 @@ const Post = ({ post }) => {
 
       // Update local comments state
       setComments([...comments, newComment]);
+      
+      // Call the parent function to update the post in the posts array
+      if (onCommentAdded) {
+        onCommentAdded(post.id, newComment);
+      }
+      
       setCommentText('');
       setShowCommentBox(false);
       
@@ -124,7 +129,7 @@ const Post = ({ post }) => {
 
   // Fetch comments if they're shown
   useEffect(() => {
-    if (showComments && comments.length === 0) {
+    if (showComments) {
       const fetchComments = async () => {
         try {
           const response = await getComments(post.id);
@@ -138,7 +143,16 @@ const Post = ({ post }) => {
               timestamp: comment.datePosted
             }));
             
+            // Set the comments
             setComments(formattedComments);
+            
+            // Update the comment count based on the actual number of comments
+            const actualCommentCount = formattedComments.length;
+            
+            // Use the onCommentAdded function to update the post in the parent component
+            if (onCommentAdded) {
+              onCommentAdded(post.id, null, actualCommentCount);
+            }
           }
         } catch (err) {
           console.error('Error fetching comments:', err);
@@ -148,7 +162,7 @@ const Post = ({ post }) => {
       
       fetchComments();
     }
-  }, [showComments, post.id, comments.length]);
+  }, [showComments, post.id, onCommentAdded]);
 
   return (
     <div className="post">
@@ -173,12 +187,9 @@ const Post = ({ post }) => {
       <div className="post-footer">
         <div className="post-stats">
           <span className="likes-count">{totalLikes} likes</span>
-          <span className="comments-count">{post.commentCount || comments.length || 0} comments</span>
-          {post.polarizationScore !== undefined && (
-            <span className="polarization-score">
-              Polarization: {post.polarizationScore}/10
-            </span>
-          )}
+          <span className="comments-count">
+            {post.commentCount || comments.length || 0} comments
+          </span>
         </div>
         
         <div className="post-actions">

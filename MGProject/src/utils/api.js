@@ -39,7 +39,7 @@ export const apiRequest = async (endpoint, options = {}) => {
     delete config.body;
   }
   
-  console.log(`Making ${config.method} request to ${url}`, config);
+  //console.log(`Making ${config.method} request to ${url}`, config);
   
   const response = await fetch(url, config);
   
@@ -49,7 +49,7 @@ export const apiRequest = async (endpoint, options = {}) => {
     const data = await response.json();
     
     // Log response for debugging
-    console.log(`Response from ${url}:`, data);
+   // console.log(`Response from ${url}:`, data);
     
     // Handle error responses
     if (response.status !== 200 && response.status !== 201) {
@@ -114,8 +114,9 @@ export const addComment = (postId, commentText) => {
   });
 };
 
-export const getComments = (postId) => {
-  return get(`/feed/comments?postID=${postId}`);
+export const getComments = (postId, page = 1, limit = 20, sortBy = 'recent') => {
+  return get(`/feed/posts/comments?id=${postId}`);
+
 };
 
 // Add this to your existing API utility functions

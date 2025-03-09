@@ -22,7 +22,7 @@ const PostList = ({ sortBy = 'recent' }) => {
     try {
       const response = await getPosts(page, 10, sortBy);
       
-      console.log('Fetched posts:', response);
+     // console.log('Fetched posts:', response);
       
       setPosts(prevPosts => {
         // Convert API response to match our Post component format
@@ -85,6 +85,36 @@ const PostList = ({ sortBy = 'recent' }) => {
     }
   }, [loading, hasMore]);
 
+  // Add this function to PostList
+  const updatePostComments = (postId, newComment, totalComments) => {
+    setPosts(prevPosts => 
+      prevPosts.map(post => {
+        if (post.id === postId) {
+          // If totalComments is provided, use it directly
+          if (totalComments !== undefined) {
+            return {
+              ...post,
+              commentCount: totalComments
+            };
+          }
+          
+          // Otherwise, increment the count for a new comment
+          if (newComment) {
+            return {
+              ...post, 
+              commentCount: (post.commentCount || 0) + 1,
+              comments: [...(post.comments || []), newComment]
+            };
+          }
+          
+          // If neither is provided, don't change anything
+          return post;
+        }
+        return post;
+      })
+    );
+  };
+
   return (
     <div className="post-list">
       {posts.length === 0 && !loading && !error && (
@@ -96,9 +126,11 @@ const PostList = ({ sortBy = 'recent' }) => {
       {posts.map((post, index) => {
         // Add ref to last post for infinite scrolling
         if (posts.length === index + 1) {
-          return <div ref={lastPostElementRef} key={post.id}><Post post={post} /></div>;
+          return <div ref={lastPostElementRef} key={post.id}>
+            <Post post={post} onCommentAdded={updatePostComments} />
+          </div>;
         } else {
-          return <Post key={post.id} post={post} />;
+          return <Post key={post.id} post={post} onCommentAdded={updatePostComments} />;
         }
       })}
       
