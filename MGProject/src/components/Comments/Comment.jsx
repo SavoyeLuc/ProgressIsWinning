@@ -1,7 +1,7 @@
 const Comment = ({ comment }) => {
     return (
       <div className="comment">
-        <p>{comment.content}</p>
+         <p><strong>{comment.username}:</strong> {comment.content}</p> {/* ✅ Show username */}
       </div>
     );
   };
