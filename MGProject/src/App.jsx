@@ -78,6 +78,7 @@ const App = () => {
         <Route path="/signup" element={<AuthLayout><SignUp /></AuthLayout>} />
         <Route path="/home" element={<Home />} />
         <Route path="/create-post" element={<CreatePost />} />
+        <Route path="/create-comment" element={<CreateComment />} />
       </Routes>
     </Router>
   );
